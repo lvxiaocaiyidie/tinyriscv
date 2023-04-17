@@ -128,10 +128,10 @@ module ex(
     assign sr_shift_mask = 32'hffffffff >> reg2_rdata_i[4:0];
     assign sri_shift_mask = 32'hffffffff >> inst_i[24:20];
 
-    assign op1_add_op2_res = op1_i + op2_i;
+    assign op1_add_op2_res = op1_i + op2_i;   //加法运算结果
     assign op1_jump_add_op2_jump_res = op1_jump_i + op2_jump_i;
 
-    assign reg1_data_invert = ~reg1_rdata_i + 1;
+    assign reg1_data_invert = ~reg1_rdata_i + 1;//取反加一是补码
     assign reg2_data_invert = ~reg2_rdata_i + 1;
 
     // 有符号数比较
@@ -170,7 +170,7 @@ module ex(
 
     // 处理乘法指令
     always @ (*) begin
-        if ((opcode == `INST_TYPE_R_M) && (funct7 == 7'b0000001)) begin
+        if ((opcode == `INST_TYPE_R_M) && (funct7 == 7'b0000001)) begin    //上面是乘法操作（实际上就是写了个* 只需要处理操作数 看是不是取补码）
             case (funct3)
                 `INST_MUL, `INST_MULHU: begin
                     mul_op1 = reg1_rdata_i;
