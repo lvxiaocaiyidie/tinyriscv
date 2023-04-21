@@ -16,7 +16,7 @@
 
 `include "defines.v"
 
-// 将译码结果向执行模块传递
+// 将译码结果向执行模块传递  因为引入了gen_pip_diff所以是时序逻辑
 module id_ex(
 
     input wire clk,
@@ -66,7 +66,7 @@ module id_ex(
 
     wire reg_we;
     gen_pipe_dff #(1) reg_we_ff(clk, rst, hold_en, `WriteDisable, reg_we_i, reg_we);
-    assign reg_we_o = reg_we;
+    assign reg_we_o = reg_we;//根据中断 加时序打一拍 输出  所以按理说有终端的时候 reg_we_o应该是0 无效
 
     wire[`RegAddrBus] reg_waddr;
     gen_pipe_dff #(5) reg_waddr_ff(clk, rst, hold_en, `ZeroReg, reg_waddr_i, reg_waddr);

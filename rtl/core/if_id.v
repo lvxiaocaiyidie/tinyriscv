@@ -15,8 +15,8 @@
  */
 
 `include "defines.v"
-
-// 将指令向译码模块传递
+// 这一部分根据中断信号的情况对指令进行处理，如果有中断信号，那么就将中断信号传递给译码模块，否则将指令传递给译码模块  这里调用了gen_diff.v中的module 是时序逻辑
+// 将指令向译码模块传递 
 module if_id(
 
     input wire clk,
@@ -28,7 +28,7 @@ module if_id(
     input wire[`Hold_Flag_Bus] hold_flag_i, // 流水线暂停标志
 
     input wire[`INT_BUS] int_flag_i,        // 外设中断输入信号
-    output wire[`INT_BUS] int_flag_o,
+    output wire[`INT_BUS] int_flag_o,   
 
     output wire[`InstBus] inst_o,           // 指令内容
     output wire[`InstAddrBus] inst_addr_o   // 指令地址

@@ -25,7 +25,7 @@ module ex(
     // from id
     input wire[`InstBus] inst_i,            // 指令内容
     input wire[`InstAddrBus] inst_addr_i,   // 指令地址
-    input wire reg_we_i,                    // 是否写通用寄存器
+    input wire reg_we_i,                    // 是否写通用寄存器   本质上是来自于id模块  经过了 id ex打拍
     input wire[`RegAddrBus] reg_waddr_i,    // 写通用寄存器地址
     input wire[`RegBus] reg1_rdata_i,       // 通用寄存器1输入数据
     input wire[`RegBus] reg2_rdata_i,       // 通用寄存器2输入数据
@@ -43,7 +43,7 @@ module ex(
     input wire[`MemBus] mem_rdata_i,        // 内存输入数据
 
     // from div
-    input wire div_ready_i,                 // 除法运算完成标志
+    input wire div_ready_i,                 // 除法运算完成标志  这里相当于一个握手信号，当除法运算完成后，会将这个信号置为1，然后ex模块才能开始下一条指令的执行
     input wire[`RegBus] div_result_i,       // 除法运算结果
     input wire div_busy_i,                  // 除法运算忙标志
     input wire[`RegAddrBus] div_reg_waddr_i,// 除法运算结束后要写的寄存器地址
@@ -57,7 +57,7 @@ module ex(
 
     // to regs
     output wire[`RegBus] reg_wdata_o,       // 写寄存器数据
-    output wire reg_we_o,                   // 是否要写通用寄存器
+    output wire reg_we_o,                   // 是否要写通用寄存器          这个信号是根据运算是否完成以及是否有中断来决定的 
     output wire[`RegAddrBus] reg_waddr_o,   // 写通用寄存器地址
 
     // to csr reg
@@ -150,7 +150,7 @@ module ex(
 
     assign reg_wdata_o = reg_wdata | div_wdata;
     // 响应中断时不写通用寄存器
-    assign reg_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: (reg_we || div_we);
+    assign reg_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: (reg_we || div_we);   //当写通用寄存器或除法执行结束时写寄存器使能
     assign reg_waddr_o = reg_waddr | div_waddr;
 
     // 响应中断时不写内存

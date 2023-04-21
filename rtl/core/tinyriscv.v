@@ -16,7 +16,7 @@
 
 `include "defines.v"
 
-// tinyriscv处理器核顶层模块
+// tinyriscv处理器核顶层模块   需要通过总线与存储单元、外设、jtag模块进行通信
 module tinyriscv(
 
     input wire clk,

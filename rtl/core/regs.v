@@ -51,7 +51,7 @@ module regs(
 
     reg[`RegBus] regs[0:`RegNum - 1];
 
-    // 写寄存器
+    // 写寄存器  只有写寄存器是时序逻辑
     always @ (posedge clk) begin
         if (rst == `RstDisable) begin
             // 优先ex模块写操作
