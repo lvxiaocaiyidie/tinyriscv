@@ -41,8 +41,8 @@ module clint(
 
     // from csr_reg
     input wire[`RegBus] data_i,              // CSR寄存器输入数据
-    input wire[`RegBus] csr_mtvec,           // mtvec寄存器
-    input wire[`RegBus] csr_mepc,            // mepc寄存器
+    input wire[`RegBus] csr_mtvec,           // mtvec寄存器           机器模式异常入口基址寄存器  进入异常之后跳转到的地址
+    input wire[`RegBus] csr_mepc,            // mepc寄存器            机器模式异常程序计数器   保存进入异常之前的PC值
     input wire[`RegBus] csr_mstatus,         // mstatus寄存器
 
     input wire global_int_en_i,              // 全局中断使能标志
