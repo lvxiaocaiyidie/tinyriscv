@@ -135,7 +135,7 @@ module rib(
     // 根据仲裁结果，选择(访问)对应的从设备
     always @ (*) begin
         m0_data_o = `ZeroWord;
-        m1_data_o = `INST_NOP;
+        m1_data_o = `INST_NOP; 
         m2_data_o = `ZeroWord;
         m3_data_o = `ZeroWord;
 
