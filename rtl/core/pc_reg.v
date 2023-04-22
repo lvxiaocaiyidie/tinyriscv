@@ -17,7 +17,7 @@
 
 `include "defines.v"
 
-// PC寄存器模块
+// PC寄存器模块  产生PC指针传到riscv core再经过总线去存储器中取指令
 module pc_reg(
 
     input wire clk,
@@ -33,7 +33,7 @@ module pc_reg(
     );
 
 
-    always @ (posedge clk) begin
+    always @ (posedge clk) begin  //这是时序逻辑 
         // 复位
         if (rst == `RstEnable || jtag_reset_flag_i == 1'b1) begin
             pc_o <= `CpuResetAddr;
