@@ -1,4 +1,3 @@
-<<<<<<< HEAD
  /*                                                                      
  Copyright 2019 Blue Liang, liangkangnan@163.com
                                                                          
@@ -368,7 +367,6 @@ module tinyriscv(
     );
 
 endmodule
-=======
  /*                                                                      
  Copyright 2019 Blue Liang, liangkangnan@163.com
                                                                          
@@ -738,4 +736,3 @@ module tinyriscv(
     );
 
 endmodule
->>>>>>> 7dde846c5f399d5a5079cb70108625763649373e

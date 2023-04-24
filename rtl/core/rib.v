@@ -1,4 +1,3 @@
-<<<<<<< HEAD
  /*                                                                      
  Copyright 2020 Blue Liang, liangkangnan@163.com
                                                                          
@@ -339,7 +338,6 @@ module rib(
     end
 
 endmodule
-=======
  /*                                                                      
  Copyright 2020 Blue Liang, liangkangnan@163.com
                                                                          
@@ -680,4 +678,3 @@ module rib(
     end
 
 endmodule
->>>>>>> 7dde846c5f399d5a5079cb70108625763649373e
