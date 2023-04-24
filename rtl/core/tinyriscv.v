@@ -523,7 +523,7 @@ module tinyriscv(
         .clk(clk),
         .rst(rst),
         .jtag_reset_flag_i(jtag_reset_flag_i),
-        .pc_o(pc_pc_o),
+        .pc_o(pc_pc_o),  //pc的指针
         .hold_flag_i(ctrl_hold_flag_o),
         .jump_flag_i(ctrl_jump_flag_o),
         .jump_addr_i(ctrl_jump_addr_o)
@@ -585,7 +585,7 @@ module tinyriscv(
         .clk(clk),
         .rst(rst),
         .inst_i(rib_pc_data_i),
-        .inst_addr_i(pc_pc_o),
+        .inst_addr_i(pc_pc_o),   //指令地址
         .int_flag_i(int_i),
         .int_flag_o(if_int_flag_o),
         .hold_flag_i(ctrl_hold_flag_o),
@@ -604,7 +604,7 @@ module tinyriscv(
         .reg1_raddr_o(id_reg1_raddr_o),
         .reg2_raddr_o(id_reg2_raddr_o),
         .inst_o(id_inst_o),
-        .inst_addr_o(id_inst_addr_o),
+        .inst_addr_o(id_inst_addr_o),//指令地址没操作就又输出了
         .reg1_rdata_o(id_reg1_rdata_o),
         .reg2_rdata_o(id_reg2_rdata_o),
         .reg_we_o(id_reg_we_o),
@@ -712,7 +712,7 @@ module tinyriscv(
         .reg_waddr_o(div_reg_waddr_o)
     );
 
-    // clint模块例化
+    // clint模块例化  这个模块需要用到置零的地址（当前PC）的值
     clint u_clint(
         .clk(clk),
         .rst(rst),
