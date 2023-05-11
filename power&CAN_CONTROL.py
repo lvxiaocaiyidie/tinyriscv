@@ -61,7 +61,7 @@ class DBCProcessor:
 
 # GUI 类
 class GUI:
-    def __init__(self):
+    def __init__(self,master):
         self.window = tk.Tk()
         self.window.title("电源控制以及CAN数据monitor")
         self.window.geometry("950x500")
@@ -74,7 +74,7 @@ class GUI:
         self.create_action_buttons()
         
         self.dbc= None
-        
+        self.master = master
         global stop_requested
         stop_requested= False
     def load_dbc(self):
