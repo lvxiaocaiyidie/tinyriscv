@@ -61,7 +61,7 @@ class DBCProcessor:
 
 # GUI 类
 class GUI:
-    def __init__(self,master):
+    def __init__(self):
         self.window = tk.Tk()
         self.window.title("电源控制以及CAN数据monitor")
         self.window.geometry("950x500")
@@ -74,7 +74,7 @@ class GUI:
         self.create_action_buttons()
         
         self.dbc= None
-        self.master = master
+        
         global stop_requested
         stop_requested= False
     def load_dbc(self):
@@ -85,7 +85,7 @@ class GUI:
 
             self.signals = []
     def create_connection_setting_area(self):
-        connection_setting_frame = ttk.LabelFrame(self.master, text="连接设置")
+        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
 
         connection_setting_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
 
@@ -100,7 +100,6 @@ class GUI:
         self.bitrate_var = tk.IntVar(value=500000)
         ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=2, column=1, padx=5, pady=5)
         
-        ttk.Button(connection_setting_frame, text="选择 DBC 文件", command=self.load_dbc).grid(row=0, column=2, padx=5, pady=5)
 
     def create_voltage_setting_area(self):
         voltage_setting_frame = ttk.LabelFrame(self.window, text="电压设置")
@@ -125,16 +124,7 @@ class GUI:
         ttk.Label(voltage_cycles_frame, text="重复次数:").grid(row=2, column=0, padx=5, pady=5)
         self.repeat_cycles_var = tk.IntVar(value=10)
         ttk.Entry(voltage_cycles_frame, textvariable=self.repeat_cycles_var, width=10).grid(row=2, column=1, padx=5, pady=5)
-    def load_dbc(self):
 
-        file_path = filedialog.askopenfilename(filetypes=[("DBC 文件", "*.dbc")])
-
-
-        if file_path:
-
-            self.dbc = cantools.database.load_file(file_path)
-
-            self.signals = []
     def create_filter_condition_area(self):
         filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
         filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
@@ -181,7 +171,7 @@ class GUI:
         global stop_requested
         # 获取用户输入的值
         stop_requested = False
-        dbc_file = self.dbc_file_var.get()
+       
         channel = self.channel_var.get()
         bitrate = self.bitrate_var.get()
        
