@@ -84,6 +84,22 @@ class GUI:
             self.dbc = cantools.database.load_file(file_path)
 
             self.signals = []
+            for message in self.dbc.messages:
+                for signal in message.signals:
+                    self.signals.append(signal)
+
+            self.update_signal_dropdowns()
+            
+    def update_signal_dropdowns(self):
+        for dropdown in self.signal_dropdowns:
+            dropdown["menu"].delete(0, "end")
+            for signal in self.signals:
+                if signal.frame_id == int(dropdown.can_id.get(), 16):
+                    dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
+
+            if not dropdown.get():
+                dropdown.set("选择信号")      
+                  
     def create_connection_setting_area(self):
         connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
 
@@ -132,12 +148,20 @@ class GUI:
         self.can_id_vars = []
         self.stop_condition_number_vars = []
         self.stop_condition_operator_vars = []
-
+ 
         ttk.Label(filter_condition_frame, text="CAN ID").grid(row=0, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
-
+        
+        self.signal_dropdowns = []
+        
         for i in range(10):
+            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
+            signal_var = tk.StringVar()
+            signal_dropdown = ttk.OptionMenu(filter_condition_frame, signal_var, "选择信号")
+            signal_dropdown.can_id = can_id_var
+            signal_dropdown.grid(row=1, column=i + 1, padx=5, pady=5)
+            self.signal_dropdowns.append(signal_dropdown)
             can_id_var = tk.StringVar()
             self.can_id_vars.append(can_id_var)
 
@@ -158,13 +182,31 @@ class GUI:
         relation = ttk.OptionMenu(filter_condition_frame, self.stop_relation_var, 'And', 'Or')
         relation.grid(row=3, column=1, padx=5, pady=5)
 
+    def parse_dbc_button_click(self):
+        if self.dbc is not None:
+            self.update_signal_dropdowns()
+            for dropdown in self.signal_dropdowns:
+                if dropdown.get() != "选择信号":
+                    can_id = int(dropdown.can_id.get(), 16)
+                    signal_name = dropdown.get()
+                    signal = self.dbc.get_signal_by_name(can_id, signal_name)
+                    if signal:
+                        min_value = signal.minimum
+                        max_value = signal.maximum
+                        unit = signal.unit if signal.unit else ""
+                        dropdown["menu"].entryconfigure(dropdown["menu"].index(signal_name),
+                                                        label=f"{signal_name} ({min_value} - {max_value} {unit})")
+        else:
+            tkinter.messagebox.showerror("错误", "请先加载 DBC 文件。")
+
+
     def create_action_buttons(self):
         action_frame = ttk.Frame(self.window)
         action_frame.grid(row=2, column=1, padx=20, pady=20, sticky='nw')
-
+ 
         ttk.Button(action_frame, text="启动", command=self.start_power_cycle_thread).grid(row=0, column=0, padx=10, pady=10)
         ttk.Button(action_frame, text="停止", command=self.stop_and_save_data_thread).grid(row=0, column=1, padx=10, pady=10)
-    
+        ttk.Button(action_frame, text="解析 DBC", command=self.parse_dbc_button_click).grid(row=0, column=2, padx=10, pady=10)
    
     
     def start_power_cycle(self):
