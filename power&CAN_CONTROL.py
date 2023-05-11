@@ -156,14 +156,19 @@ class GUI:
         self.signal_dropdowns = []
         
         for i in range(10):
-            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
             signal_var = tk.StringVar()
             signal_dropdown = ttk.OptionMenu(filter_condition_frame, signal_var, "选择信号")
+            can_id_var = tk.StringVar()
+            self.can_id_vars.append(can_id_var)
             signal_dropdown.can_id = can_id_var
             signal_dropdown.grid(row=1, column=i + 1, padx=5, pady=5)
             self.signal_dropdowns.append(signal_dropdown)
-            can_id_var = tk.StringVar()
-            self.can_id_vars.append(can_id_var)
+            
+            
+            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
+            
+            
+            
 
             stop_condition_number_var = tk.StringVar()
             self.stop_condition_number_vars.append(stop_condition_number_var)
@@ -320,3 +325,11 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
+Traceback (most recent call last):
+  File "C:\Users\leylv\AppData\Local\Programs\Python\Python310-32\lib\tkinter\__init__.py", line 1921, in __call__
+    return self.func(*args)
+  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 192, in parse_dbc_button_click
+    self.update_signal_dropdowns()
+  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 97, in update_signal_dropdowns
+    if signal.frame_id == int(dropdown.can_id.get(), 16):
+AttributeError: 'Signal' object has no attribute 'frame_id'
