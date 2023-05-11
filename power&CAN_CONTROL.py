@@ -196,7 +196,6 @@ class GUI:
     def parse_dbc_button_click(self):
         if self.dbc is not None:
             self.update_signal_dropdowns()
-            
             for dropdown in self.signal_dropdowns:
                 if dropdown.get() != "选择信号":
                     can_id = int(dropdown.can_id.get(), 16)
@@ -330,4 +329,5 @@ class GUI:
 if __name__ == '__main__':
     app = GUI()
     app.window.mainloop() 
+
 
