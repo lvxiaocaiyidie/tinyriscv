@@ -4,7 +4,7 @@ import pyvisa
 import can
 import cantools
 import time
-from tkinter import ttk,StringVar
+from tkinter import ttk,StringVar,filedialog
 import os
 os.add_dll_directory('C:\\Program Files (x86)\\Keysight\\IO Libraries Suite\\bin')
 import datetime
@@ -48,8 +48,8 @@ class CANReader:
 
 # DBCProcessor 类
 class DBCProcessor:
-    def __init__(self, dbc_file):
-        self.db = cantools.database.load_file(dbc_file)
+    def __init__(self, dbc):
+        self.db = dbc
 
     def parse_messages_using_dbc(self, messages):
         result = {}
@@ -73,16 +73,23 @@ class GUI:
         self.create_filter_condition_area()
         self.create_action_buttons()
         
+        self.dbc= None
+        
         global stop_requested
         stop_requested= False
+    def load_dbc(self):
+        file_path = filedialog.askopenfilename(filetypes=[("DBC 文件", "*.dbc")])
 
+        if file_path:
+            self.dbc = cantools.database.load_file(file_path)
+
+            self.signals = []
     def create_connection_setting_area(self):
-        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
-        connection_setting_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nw')
+        connection_setting_frame = ttk.LabelFrame(self.root, text="连接设置")
+        connection_setting_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(connection_setting_frame, text="DBC文件路径:").grid(row=0, column=0, padx=5, pady=5)
-        self.dbc_file_var = tk.StringVar(value='C:\\Users\\leylv\\Downloads\\Lychee_VEH.dbc')
-        ttk.Entry(connection_setting_frame, textvariable=self.dbc_file_var, width=30).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(connection_setting_frame, text="选择 DBC 文件", command=self.load_dbc).grid(row=0, column=0, padx=5, pady=5)
+
 
         ttk.Label(connection_setting_frame, text="Channel:").grid(row=1, column=0, padx=5, pady=5)
         self.channel_var = tk.StringVar(value="PCAN_USBBUS1")
@@ -91,7 +98,8 @@ class GUI:
         ttk.Label(connection_setting_frame, text="Bitrate:").grid(row=2, column=0, padx=5, pady=5)
         self.bitrate_var = tk.IntVar(value=500000)
         ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=2, column=1, padx=5, pady=5)
-
+        
+        ttk.Button(connection_setting_frame, text="选择 DBC 文件", command=self.load_dbc).grid(row=0, column=2, padx=5, pady=5)
 
     def create_voltage_setting_area(self):
         voltage_setting_frame = ttk.LabelFrame(self.window, text="电压设置")
@@ -116,7 +124,16 @@ class GUI:
         ttk.Label(voltage_cycles_frame, text="重复次数:").grid(row=2, column=0, padx=5, pady=5)
         self.repeat_cycles_var = tk.IntVar(value=10)
         ttk.Entry(voltage_cycles_frame, textvariable=self.repeat_cycles_var, width=10).grid(row=2, column=1, padx=5, pady=5)
+    def load_dbc(self):
 
+        file_path = filedialog.askopenfilename(filetypes=[("DBC 文件", "*.dbc")])
+
+
+        if file_path:
+
+            self.dbc = cantools.database.load_file(file_path)
+
+            self.signals = []
     def create_filter_condition_area(self):
         filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
         filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
@@ -175,7 +192,7 @@ class GUI:
 
         filtered_addresses = [int(can_id.get(), 16) for can_id in self.can_id_vars if can_id.get()]
         can_reader = CANReader(channel=channel, bitrate=bitrate, filtered_addresses=filtered_addresses)
-        dbc_processor = DBCProcessor(dbc_file=dbc_file)
+        dbc_processor = DBCProcessor(dbc=self.dbc)
 
         # 在此添加时间戳
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
