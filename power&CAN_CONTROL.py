@@ -147,7 +147,7 @@ class GUI:
     def create_filter_condition_area(self):
         filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
         filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
-
+        can_id_var = tk.StringVar()
         self.can_id_vars = []
         self.stop_condition_number_vars = []
         self.stop_condition_operator_vars = []
