@@ -83,23 +83,25 @@ class GUI:
         if file_path:
             self.dbc = cantools.database.load_file(file_path)
 
-            self.signals = []
+            self.signals_dict = {}
+
             for message in self.dbc.messages:
                 for signal in message.signals:
-                    self.signals.append(signal)
-
-            self.update_signal_dropdowns()
+                    if message.frame_id not in self.signals_dict:
+                        self.signals_dict[message.frame_id] = []
+                    self.signals_dict[message.frame_id].append(signal)
             
     def update_signal_dropdowns(self):
-        for dropdown in self.signal_dropdowns:
-            dropdown["menu"].delete(0, "end")
-            for message in self.dbc.messages:
-              if message.frame_id == int(dropdown.can_id.get(), 16):
-                   for signal in message.signals:
-                        dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
+        can_id = int(self.can_id_entry.get(), 16)
+        if can_id in self.signals_dict:
+            signals = self.signals_dict[can_id]
+            for dropdown in self.signal_dropdowns:
+                dropdown["menu"].delete(0, "end")
+                for signal in signals:
+                    dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
 
-        if not dropdown.get():
-            dropdown.set("选择信号")    
+                if not dropdown.get():
+                    dropdown.set("选择信号")    
                   
     def create_connection_setting_area(self):
         connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
@@ -154,16 +156,19 @@ class GUI:
         ttk.Label(filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
         
-        self.signal_dropdowns = []
         
+        self.signal_dropdowns = []
+
         for i in range(10):
+            can_id_entry = ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8)
+            can_id_entry.bind("<FocusOut>", lambda event: self.update_signal_dropdowns())  # 新增
+            can_id_entry.grid(row=0, column=i + 1, padx=5, pady=5)
+
             signal_var = tk.StringVar()
             signal_dropdown = ttk.OptionMenu(filter_condition_frame, signal_var, "选择信号")
-            can_id_var = tk.StringVar()
-            self.can_id_vars.append(can_id_var)
-            signal_dropdown.can_id = can_id_var
             signal_dropdown.grid(row=1, column=i + 1, padx=5, pady=5)
             self.signal_dropdowns.append(signal_dropdown)
+       
             
             
             ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
@@ -212,7 +217,7 @@ class GUI:
  
         ttk.Button(action_frame, text="启动", command=self.start_power_cycle_thread).grid(row=0, column=0, padx=10, pady=10)
         ttk.Button(action_frame, text="停止", command=self.stop_and_save_data_thread).grid(row=0, column=1, padx=10, pady=10)
-        ttk.Button(action_frame, text="解析 DBC", command=self.parse_dbc_button_click).grid(row=0, column=2, padx=10, pady=10)
+        
    
     
     def start_power_cycle(self):
