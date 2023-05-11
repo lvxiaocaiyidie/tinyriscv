@@ -49,21 +49,21 @@ module regs(
 
     );
 
-    reg[`RegBus] regs[0:`RegNum - 1];
+    reg[`RegBus] regs[0:`RegNum - 1];    //32个通用寄存器
 
-    // 写寄存器  只有写寄存器是时序逻辑
+    // 写寄存器  只有写寄存器是时序逻辑  这是因为写寄存器涉及到寄存器中内容的该变 需要考虑竞争与建立时间保持时间问题 所以用时序逻辑
     always @ (posedge clk) begin
         if (rst == `RstDisable) begin
             // 优先ex模块写操作
-            if ((we_i == `WriteEnable) && (waddr_i != `ZeroReg)) begin
-                regs[waddr_i] <= wdata_i;
-            end else if ((jtag_we_i == `WriteEnable) && (jtag_addr_i != `ZeroReg)) begin
+            if ((we_i == `WriteEnable) && (waddr_i != `ZeroReg)) begin    //根据指令编码对不同的寄存器进行操作
+                regs[waddr_i] <= wdata_i;   
+            end else if ((jtag_we_i == `WriteEnable) && (jtag_addr_i != `ZeroReg)) begin   //根据jtag的指令编码对不同的寄存器进行操作
                 regs[jtag_addr_i] <= jtag_data_i;
             end
         end
     end
 
-    // 读寄存器1
+    // 读寄存器1                                                        //这是根据之林那个的特点决定的 因为指令往往需要两个操作数（需要读取）  然后一个目的寄存器写入结果
     always @ (*) begin
         if (raddr1_i == `ZeroReg) begin
             rdata1_o = `ZeroWord;

@@ -45,7 +45,7 @@ module ctrl(
     );
 
 
-    always @ (*) begin
+    always @ (*) begin                         //这里有几种暂停流水线的模式 根据中断与异常：一是暂停整条流水线 二是暂停pc寄存器 根据jtag信号：三是暂停整条流水线
         jump_addr_o = jump_addr_i;
         jump_flag_o = jump_flag_i;
         // 默认不暂停
