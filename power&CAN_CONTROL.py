@@ -93,12 +93,13 @@ class GUI:
     def update_signal_dropdowns(self):
         for dropdown in self.signal_dropdowns:
             dropdown["menu"].delete(0, "end")
-            for signal in self.signals:
-                if signal.frame_id == int(dropdown.can_id.get(), 16):
-                    dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
+            for message in self.dbc.messages:
+              if message.frame_id == int(dropdown.can_id.get(), 16):
+                   for signal in message.signals:
+                        dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
 
-            if not dropdown.get():
-                dropdown.set("选择信号")      
+        if not dropdown.get():
+            dropdown.set("选择信号")    
                   
     def create_connection_setting_area(self):
         connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
@@ -325,11 +326,3 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
-Traceback (most recent call last):
-  File "C:\Users\leylv\AppData\Local\Programs\Python\Python310-32\lib\tkinter\__init__.py", line 1921, in __call__
-    return self.func(*args)
-  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 192, in parse_dbc_button_click
-    self.update_signal_dropdowns()
-  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 97, in update_signal_dropdowns
-    if signal.frame_id == int(dropdown.can_id.get(), 16):
-AttributeError: 'Signal' object has no attribute 'frame_id'
