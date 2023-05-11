@@ -88,7 +88,7 @@ class GUI:
                 for signal in message.signals:
                     self.signals.append(signal)
 
-            self.update_signal_dropdowns()
+            
             
     def update_signal_dropdowns(self):
         for dropdown in self.signal_dropdowns:
@@ -191,6 +191,7 @@ class GUI:
     def parse_dbc_button_click(self):
         if self.dbc is not None:
             self.update_signal_dropdowns()
+            
             for dropdown in self.signal_dropdowns:
                 if dropdown.get() != "选择信号":
                     can_id = int(dropdown.can_id.get(), 16)
@@ -326,3 +327,11 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
+Traceback (most recent call last):
+  File "C:\Users\leylv\AppData\Local\Programs\Python\Python310-32\lib\tkinter\__init__.py", line 1921, in __call__
+    return self.func(*args)
+  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 91, in load_dbc
+    self.update_signal_dropdowns()
+  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 97, in update_signal_dropdowns
+    if message.frame_id == int(dropdown.can_id.get(), 16):
+ValueError: invalid literal for int() with base 16: ''
