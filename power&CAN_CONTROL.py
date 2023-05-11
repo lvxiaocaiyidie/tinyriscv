@@ -288,3 +288,7 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
+Traceback (most recent call last):
+  File "c:\Users\leylv\Downloads\tinyriscv\power&CAN_CONTROL.py", line 287, in <module>
+    app = GUI()
+TypeError: GUI.__init__() missing 1 required positional argument: 'master'
