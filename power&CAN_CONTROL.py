@@ -85,7 +85,8 @@ class GUI:
 
             self.signals = []
     def create_connection_setting_area(self):
-        connection_setting_frame = ttk.LabelFrame(self.root, text="连接设置")
+        connection_setting_frame = ttk.LabelFrame(self.master, text="连接设置")
+
         connection_setting_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
 
         ttk.Button(connection_setting_frame, text="选择 DBC 文件", command=self.load_dbc).grid(row=0, column=0, padx=5, pady=5)
