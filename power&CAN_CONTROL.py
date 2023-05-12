@@ -234,7 +234,7 @@ class GUI:
             self.unit_labels[index]["text"] = ""
             self.range_labels[index]["text"] = ""
 
-            
+
 
     def create_action_buttons(self):
         action_frame = ttk.Frame(self.window)
@@ -367,5 +367,3 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
- self.unit_labels.append(unit_label)
-AttributeError: 'GUI' object has no attribute 'unit_labels'
