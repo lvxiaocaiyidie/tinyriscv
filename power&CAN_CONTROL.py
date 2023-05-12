@@ -180,9 +180,10 @@ class GUI:
             ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=5, pady=5)
           
             can_id_var.trace("w",lambda *args,index=i:self.update_signal_options(index))
-            unit_label = ttk.Label(filter_condition_frame, text="")
+            
+            unit_label = ttk.Label(filter_condition_frame, text="a单位")
             unit_label.grid(row=4, column=i + 1, padx=5, pady=5)
-            range_label = ttk.Label(filter_condition_frame, text="")
+            range_label = ttk.Label(filter_condition_frame, text="a范围")
             range_label.grid(row=5, column=i + 1, padx=5, pady=5)
             self.unit_labels.append(unit_label)
             self.range_labels.append(range_label)
@@ -214,7 +215,7 @@ class GUI:
 
                 self.signal_combo["values"] = [signal.name for signal in self.signals]
 
-                self.signal_combo.bind("<<ComboboxSelected>>", self.on_signal_selected(index))
+                self.signal_combo.bind("<<ComboboxSelected>>", lambda event:self.on_signal_selected(index))
 
             else:
 
@@ -227,9 +228,10 @@ class GUI:
     def on_signal_selected(self, index):
         selected_signal_name = self.signal_combo.get()
         selected_signal = next((signal for signal in self.signals if signal.name == selected_signal_name), None)
-
+        print(selected_signal,"qwqeqe")
         if selected_signal:
             self.unit_labels[index]["text"] = f"单位：{selected_signal.unit}"
+            print(selected_signal.unit,selected_signal.minimum)
             self.range_labels[index]["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
         else:
             self.unit_labels[index]["text"] = ""
