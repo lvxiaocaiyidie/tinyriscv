@@ -115,6 +115,7 @@ class GUI:
        ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=3, column=1, padx=5, pady=5)
 
     def load_dbc(self):
+       print("DBC文件加载中") 
        dbc_file_path = self.dbc_file_var.get()
        self.dbc = cantools.database.load_file(dbc_file_path)
        print("DBC文件加载成功")
@@ -198,14 +199,14 @@ class GUI:
         if self.dbc is None:
            print("请先加载DBC文件")
            return
-        singlsingle_slecte_slect_frame = ttk.LabelFrame(self.window,text="信号")
-        singlsingle_slecte_slect_frame.grid(row=0, column=0, padx=20, pady=16, sticky='nw')
+        # singlsingle_slecte_slect_frame = ttk.LabelFrame(self.window,text="信号")
+        # singlsingle_slecte_slect_frame.grid(row=0, column=0, padx=20, pady=16, sticky='nw')
         self.signal_combo = ttk.Combobox(self.window, width=80)
         self.signal_combo.grid(row=6+index, column=0, padx=10, pady=10)
         can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
         print (can_ids)
         for can_id in can_ids:
-            print(can_id)
+            
             
             message = self.dbc.get_message_by_frame_id(int(can_id,16))
       
@@ -228,10 +229,10 @@ class GUI:
     def on_signal_selected(self, index):
         selected_signal_name = self.signal_combo.get()
         selected_signal = next((signal for signal in self.signals if signal.name == selected_signal_name), None)
-        print(selected_signal,"qwqeqe")
+       
         if selected_signal:
             self.unit_labels[index]["text"] = f"单位：{selected_signal.unit}"
-            print(selected_signal.unit,selected_signal.minimum)
+            
             self.range_labels[index]["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
         else:
             self.unit_labels[index]["text"] = ""
