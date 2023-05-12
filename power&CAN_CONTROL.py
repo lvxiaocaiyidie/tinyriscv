@@ -367,3 +367,5 @@ if __name__ == '__main__':
     app.window.mainloop() 
 
 
+ self.unit_labels.append(unit_label)
+AttributeError: 'GUI' object has no attribute 'unit_labels'
