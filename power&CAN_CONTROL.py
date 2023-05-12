@@ -80,7 +80,9 @@ class GUI:
         self.window.title("电源控制以及CAN数据monitor")
         self.window.geometry("950x500")
         self.window.configure(bg="lightgray")
-
+        
+        self.unit_labels = []
+        self.range_labels = []
         self.create_connection_setting_area()
         self.create_voltage_setting_area()
         self.create_voltage_cycles_area()
@@ -90,8 +92,7 @@ class GUI:
         global stop_requested
         stop_requested= False
         self.selected_signals = []
-        self.unit_labels = []
-        self.range_labels = []
+        
 
     def create_connection_setting_area(self):
        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
