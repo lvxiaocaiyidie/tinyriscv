@@ -89,6 +89,7 @@ class GUI:
         self.dbc=None
         global stop_requested
         stop_requested= False
+        self.selected_signals = []
         
 
     def create_connection_setting_area(self):
@@ -233,38 +234,7 @@ class GUI:
             self.unit_label["text"] = ""
 
             self.range_label["text"] = ""
-        # 获取有效的CAN ID
-
-        #can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
-        #dbc_processor=DBCProcessor(dbc_file=self.dbc_file_var.get())
         
-        # if can_ids:
-
-        #     # 清空原有选项
-
-        #     for signal_var, signal_option_menu in zip(self.signal_vars, self.signal_option_menus):
-
-        #         signal_var.set("")
-
-        #         signal_option_menu['menu'].delete(0, 'end')
-
-
-        #     # 更新信号选项
-
-        #     for can_id in can_ids:
-
-        #         # 根据CAN ID获取对应的信号列表
-                
-        #         signals = dbc_processor.get_signals_by_can_id(can_id)
-        #         print(signals,can_id)
-        #         # 添加信号选项
-
-        #         for signal in signals:
-
-        #             self.signal_option_menus[can_ids.index(can_id)]['menu'].add_command(
-
-        #                 label=signal, command=lambda value=signal: self.signal_vars[can_ids.index(can_id)].set(value))
-
 
     def create_action_buttons(self):
         action_frame = ttk.Frame(self.window)
@@ -324,9 +294,7 @@ class GUI:
                     value= int(value_var.get(),16)
                     signal_name=signal_var.get()
                     signal_position =dbc_processor.get_signal_position_by_name(can_id, signal_name)
-                    if signal_position is not None:
-                        stop_conditions.append((can_id, operator_var.get(), int(value_var.get(), 16)))
-
+                    stop_conditions.append((can_id, signal_name, operator, value))
             for _ in range(repeat_cycles):
                 
                 psc.set_output_voltage(0)
@@ -345,22 +313,26 @@ class GUI:
                         tkinter.messagebox.showinfo("终止" ,"手动停止")
                         return
                     satisfied_conditions = 0
-                    for can_id, operator, value in stop_conditions:
+                    for can_id, signal_name, operator, value in stop_conditions:
                         if can_id in parsed_data:
-                            match = False
-                            if operator == "等于":
-                                match = parsed_data[can_id] == value
-                            elif operator == "小于":
-                                match = parsed_data[can_id] < value
-                            elif operator == "大于":
-                                match = parsed_data[can_id] > value
+                            signal_value = parsed_data[can_id].get(signal_name)
+                            if signal_value is not None:
+                                match = False
+                                if operator == "等于":
+                                    match = signal_value == value
+                                elif operator == "小于":
+                                    match = signal_value < value
+                                elif operator == "大于":
+                                    match = signal_value > value
 
-                            if match:
-                                satisfied_conditions += 1
-                                if self.stop_relation_var.get() == "Or":
-                                    psc.set_output_voltage(0)
-                                    tkinter.messagebox.showinfo("终止", f"停止条件已被触发。CAN ID: {can_id}")
-                                    return
+                                if match:
+                                    satisfied_conditions += 1
+                                    if self.stop_relation_var.get() == "Or":
+                                        psc.set_output_voltage(0)
+                                        tkinter.messagebox.showinfo("终止", f"停止条件已被触发。CAN ID: {can_id}, Signal Name: {signal_name}")
+                                        return
+
+ 
                             
                     if self.stop_relation_var.get() == "And" and satisfied_conditions == len(stop_conditions):
                         psc.set_output_voltage(0)
