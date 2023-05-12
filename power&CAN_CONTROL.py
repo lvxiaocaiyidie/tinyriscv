@@ -90,7 +90,8 @@ class GUI:
         global stop_requested
         stop_requested= False
         self.selected_signals = []
-        
+        self.unit_labels = []
+        self.range_labels = []
 
     def create_connection_setting_area(self):
        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
@@ -150,10 +151,10 @@ class GUI:
         self.can_id_vars = []
         self.stop_condition_number_vars = []
         self.stop_condition_operator_vars = []
-        self.unit_label = tk.Label(filter_condition_frame, text="")
-        self.range_label = tk.Label(filter_condition_frame, text="")
-        self.unit_label.grid(row=2, column=2, padx=5, pady=5)
-        self.range_label.grid(row=2, column=2, padx=5, pady=5)
+        # self.unit_label = tk.Label(filter_condition_frame, text="")
+        # self.range_label = tk.Label(filter_condition_frame, text="")
+        # self.unit_label.grid(row=2, column=2, padx=5, pady=5)
+        # self.range_label.grid(row=2, column=2, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="CAN ID").grid(row=0, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
@@ -176,9 +177,15 @@ class GUI:
             operator.grid(row=1, column=i + 1, padx=5, pady=5)
             self.signal_option_menus.append(signal_option_menu)
             ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=5, pady=5)
-        
+          
             can_id_var.trace("w",lambda *args,index=i:self.update_signal_options(index))
-        
+            unit_label = ttk.Label(filter_condition_frame, text="")
+            unit_label.grid(row=4, column=i + 1, padx=5, pady=5)
+            range_label = ttk.Label(filter_condition_frame, text="")
+            range_label.grid(row=5, column=i + 1, padx=5, pady=5)
+            self.unit_labels.append(unit_label)
+            self.range_labels.append(range_label)
+            
         self.stop_relation_var = tk.StringVar()
         ttk.Label(filter_condition_frame, text="停止条件关系").grid(row=3, column=0, padx=5, pady=5)
         relation = ttk.OptionMenu(filter_condition_frame, self.stop_relation_var, 'And', 'Or')
@@ -217,24 +224,17 @@ class GUI:
                 self.signal_combo["values"] = []
 
     def on_signal_selected(self, index):
-        
         selected_signal_name = self.signal_combo.get()
-
         selected_signal = next((signal for signal in self.signals if signal.name == selected_signal_name), None)
 
-
         if selected_signal:
-
-            self.unit_label["text"] = f"单位：{selected_signal.unit}"
-
-            self.range_label["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
-
+            self.unit_labels[index]["text"] = f"单位：{selected_signal.unit}"
+            self.range_labels[index]["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
         else:
+            self.unit_labels[index]["text"] = ""
+            self.range_labels[index]["text"] = ""
 
-            self.unit_label["text"] = ""
-
-            self.range_label["text"] = ""
-        
+            
 
     def create_action_buttons(self):
         action_frame = ttk.Frame(self.window)
