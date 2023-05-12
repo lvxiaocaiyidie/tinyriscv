@@ -86,10 +86,10 @@ class GUI:
         self.create_voltage_cycles_area()
         self.create_filter_condition_area()
         self.create_action_buttons()
-        
+        self.dbc=None
         global stop_requested
         stop_requested= False
-   
+        
 
     def create_connection_setting_area(self):
         connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
@@ -97,6 +97,8 @@ class GUI:
 
         ttk.Label(connection_setting_frame, text="DBC文件路径:").grid(row=0, column=0, padx=5, pady=5)
         self.dbc_file_var = tk.StringVar(value='C:\\Users\\leylv\\Downloads\\Lychee_VEH.dbc')
+        self.dbc= cantools.database.load_file(self.dbc_file_var.get())
+        
         ttk.Entry(connection_setting_frame, textvariable=self.dbc_file_var, width=30).grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(connection_setting_frame, text="Channel:").grid(row=1, column=0, padx=5, pady=5)
@@ -174,37 +176,63 @@ class GUI:
 
     def update_signal_options(self, event):
         
+        singlsingle_slecte_slect_frame = ttk.LabelFrame(self.window,text="信号")
+        singlsingle_slecte_slect_frame.grid(row=3, column=3, padx=20, pady=20, sticky='nw')
+        self.signal_combo = ttk.Combobox(self.window, width=80).grid(row=0, column=0, padx=10, pady=10)
+        
+        can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
+        print (can_ids)
+        for can_id in can_ids:
+            print(can_id)
+            print(self.dbc)
+            message = self.dbc.get_message_by_frame_id(can_id)
+      
+            if message:
+
+                self.signals = message.signals
+
+                self.signal_combo["values"] = [signal.name for signal in self.signals]
+
+                self.signal_combo.bind("<<ComboboxSelected>>", self.on_signal_selected)
+
+            else:
+
+                self.signals = []
+
+                self.signal_combo.set('')
+
+                self.signal_combo["values"] = []
         # 获取有效的CAN ID
 
-        can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
-        dbc_processor=DBCProcessor(dbc_file=self.dbc_file_var.get())
+        #can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
+        #dbc_processor=DBCProcessor(dbc_file=self.dbc_file_var.get())
         
-        if can_ids:
+        # if can_ids:
 
-            # 清空原有选项
+        #     # 清空原有选项
 
-            for signal_var, signal_option_menu in zip(self.signal_vars, self.signal_option_menus):
+        #     for signal_var, signal_option_menu in zip(self.signal_vars, self.signal_option_menus):
 
-                signal_var.set("")
+        #         signal_var.set("")
 
-                signal_option_menu['menu'].delete(0, 'end')
+        #         signal_option_menu['menu'].delete(0, 'end')
 
 
-            # 更新信号选项
+        #     # 更新信号选项
 
-            for can_id in can_ids:
+        #     for can_id in can_ids:
 
-                # 根据CAN ID获取对应的信号列表
+        #         # 根据CAN ID获取对应的信号列表
                 
-                signals = dbc_processor.get_signals_by_can_id(can_id)
-                print(signals,can_id)
-                # 添加信号选项
+        #         signals = dbc_processor.get_signals_by_can_id(can_id)
+        #         print(signals,can_id)
+        #         # 添加信号选项
 
-                for signal in signals:
+        #         for signal in signals:
 
-                    self.signal_option_menus[can_ids.index(can_id)]['menu'].add_command(
+        #             self.signal_option_menus[can_ids.index(can_id)]['menu'].add_command(
 
-                        label=signal, command=lambda value=signal: self.signal_vars[can_ids.index(can_id)].set(value))
+        #                 label=signal, command=lambda value=signal: self.signal_vars[can_ids.index(can_id)].set(value))
 
 
     def create_action_buttons(self):
@@ -258,7 +286,7 @@ class GUI:
 
             stop_conditions = []
             for can_id_var, operator_var, value_var,signal_var in zip(self.can_id_vars, self.stop_condition_operator_vars,
-                                            self.stop_condition_number_vars),self.signal_vars:
+                                            self.stop_condition_number_vars,self.signal_vars):
                 if can_id_var.get() and signal_var.get():
                     can_id = int(can_id_var.get(), 16)
                     operator= operator_var.get()
