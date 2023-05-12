@@ -4,7 +4,7 @@ import pyvisa
 import can
 import cantools
 import time
-from tkinter import ttk,StringVar,filedialog
+from tkinter import ttk,StringVar
 import os
 os.add_dll_directory('C:\\Program Files (x86)\\Keysight\\IO Libraries Suite\\bin')
 import datetime
@@ -48,9 +48,9 @@ class CANReader:
 
 # DBCProcessor 类
 class DBCProcessor:
-    def __init__(self, dbc):
-        self.db = dbc
-
+    def __init__(self, dbc_file):
+        self.db = cantools.database.load_file(dbc_file)
+        print(dbc_file)
     def parse_messages_using_dbc(self, messages):
         result = {}
         for message in messages:
@@ -58,7 +58,21 @@ class DBCProcessor:
             result[message.arbitration_id] = parsed_data
 
         return result
+    def get_signals_by_can_id(self, can_id):
+       signals = []
+       
+       for message in self.db.messages:
+           if message.frame_id == can_id:
+               signals.extend([signal.name for signal in message.signals])
+              
+       return signals
 
+    def get_signal_position_by_name(self, can_id, signal_name):
+       for message in self.db.messages:
+           if message.frame_id == can_id:
+               for signal in message.signals:
+                   if signal.name == signal_name:
+                       return signal.start_bit
 # GUI 类
 class GUI:
     def __init__(self):
@@ -72,53 +86,35 @@ class GUI:
         self.create_voltage_cycles_area()
         self.create_filter_condition_area()
         self.create_action_buttons()
-        
-        self.dbc= None
-        
+        self.dbc=None
         global stop_requested
         stop_requested= False
-    def load_dbc(self):
-        file_path = filedialog.askopenfilename(filetypes=[("DBC 文件", "*.dbc")])
-
-        if file_path:
-            self.dbc = cantools.database.load_file(file_path)
-
-            self.signals_dict = {}
-
-            for message in self.dbc.messages:
-                for signal in message.signals:
-                    if message.frame_id not in self.signals_dict:
-                        self.signals_dict[message.frame_id] = []
-                    self.signals_dict[message.frame_id].append(signal)
-            
-    def update_signal_dropdowns(self):
-        can_id = int(self.can_id_entry.get(), 16)
-        if can_id in self.signals_dict:
-            signals = self.signals_dict[can_id]
-            for dropdown in self.signal_dropdowns:
-                dropdown["menu"].delete(0, "end")
-                for signal in signals:
-                    dropdown["menu"].add_command(label=signal.name, command=tk._setit(dropdown, signal.name))
-
-                if not dropdown.get():
-                    dropdown.set("选择信号")    
-                  
-    def create_connection_setting_area(self):
-        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
-
-        connection_setting_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-
-        ttk.Button(connection_setting_frame, text="选择 DBC 文件", command=self.load_dbc).grid(row=0, column=0, padx=5, pady=5)
-
-
-        ttk.Label(connection_setting_frame, text="Channel:").grid(row=1, column=0, padx=5, pady=5)
-        self.channel_var = tk.StringVar(value="PCAN_USBBUS1")
-        ttk.Entry(connection_setting_frame, textvariable=self.channel_var, width=30).grid(row=1, column=1, padx=5, pady=5)
-
-        ttk.Label(connection_setting_frame, text="Bitrate:").grid(row=2, column=0, padx=5, pady=5)
-        self.bitrate_var = tk.IntVar(value=500000)
-        ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=2, column=1, padx=5, pady=5)
         
+
+    def create_connection_setting_area(self):
+       connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
+       connection_setting_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nw')
+
+       ttk.Label(connection_setting_frame, text="DBC文件路径:").grid(row=0, column=0, padx=5, pady=5)
+       self.dbc_file_var = tk.StringVar(value='C:\\Users\\leylv\\Downloads\\Lychee_VEH.dbc')
+
+       dbc_file_entry = ttk.Entry(connection_setting_frame, textvariable=self.dbc_file_var, width=30)
+       dbc_file_entry.grid(row=0, column=1, padx=5, pady=5)
+
+       ttk.Button(connection_setting_frame, text="加载DBC", command=self.load_dbc).grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+
+       ttk.Label(connection_setting_frame, text="Channel:").grid(row=2, column=0, padx=5, pady=5)
+       self.channel_var = tk.StringVar(value="PCAN_USBBUS1")
+       ttk.Entry(connection_setting_frame, textvariable=self.channel_var, width=30).grid(row=2, column=1, padx=5, pady=5)
+
+       ttk.Label(connection_setting_frame, text="Bitrate:").grid(row=3, column=0, padx=5, pady=5)
+       self.bitrate_var = tk.IntVar(value=500000)
+       ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=3, column=1, padx=5, pady=5)
+
+    def load_dbc(self):
+       dbc_file_path = self.dbc_file_var.get()
+       self.dbc = cantools.database.load_file(dbc_file_path)
+       print("DBC文件加载成功")
 
     def create_voltage_setting_area(self):
         voltage_setting_frame = ttk.LabelFrame(self.window, text="电压设置")
@@ -147,35 +143,27 @@ class GUI:
     def create_filter_condition_area(self):
         filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
         filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
-        can_id_var = tk.StringVar()
+        
+        self.signal_option_menus=[]
+        self.signal_vars  =[]
         self.can_id_vars = []
         self.stop_condition_number_vars = []
         self.stop_condition_operator_vars = []
- 
+        self.unit_label = tk.Label(filter_condition_frame, text="")
+        self.range_label = tk.Label(filter_condition_frame, text="")
+        self.unit_label.grid(row=2, column=2, padx=5, pady=5)
+        self.range_label.grid(row=2, column=2, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="CAN ID").grid(row=0, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
         ttk.Label(filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
         
-        
-        self.signal_dropdowns = []
-
         for i in range(10):
-            can_id_entry = ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8)
-            can_id_entry.bind("<FocusOut>", lambda event: self.update_signal_dropdowns())  # 新增
-            can_id_entry.grid(row=0, column=i + 1, padx=5, pady=5)
-
+            can_id_var = tk.StringVar()
+            self.can_id_vars.append(can_id_var)
             signal_var = tk.StringVar()
-            signal_dropdown = ttk.OptionMenu(filter_condition_frame, signal_var, "选择信号")
-            signal_dropdown.grid(row=1, column=i + 1, padx=5, pady=5)
-            self.signal_dropdowns.append(signal_dropdown)
-       
-            
-            
-            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
-            
-            
-            
-
+            self.signal_vars.append(signal_var)
+            signal_option_menu =ttk.OptionMenu(filter_condition_frame, signal_var,"")
+            signal_option_menu.grid(row=8, column=i+1, padx=5, pady=5)
             stop_condition_number_var = tk.StringVar()
             self.stop_condition_number_vars.append(stop_condition_number_var)
             stop_condition_operator_var = tk.StringVar()
@@ -185,46 +173,117 @@ class GUI:
 
             operator = ttk.OptionMenu(filter_condition_frame, stop_condition_operator_var, '等于', '小于', '大于')
             operator.grid(row=1, column=i + 1, padx=5, pady=5)
-
+            self.signal_option_menus.append(signal_option_menu)
             ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=5, pady=5)
-
+        
+            can_id_var.trace("w",lambda *args,index=i:self.update_signal_options(index))
+        
         self.stop_relation_var = tk.StringVar()
         ttk.Label(filter_condition_frame, text="停止条件关系").grid(row=3, column=0, padx=5, pady=5)
         relation = ttk.OptionMenu(filter_condition_frame, self.stop_relation_var, 'And', 'Or')
         relation.grid(row=3, column=1, padx=5, pady=5)
 
-    def parse_dbc_button_click(self):
-        if self.dbc is not None:
-            self.update_signal_dropdowns()
-            for dropdown in self.signal_dropdowns:
-                if dropdown.get() != "选择信号":
-                    can_id = int(dropdown.can_id.get(), 16)
-                    signal_name = dropdown.get()
-                    signal = self.dbc.get_signal_by_name(can_id, signal_name)
-                    if signal:
-                        min_value = signal.minimum
-                        max_value = signal.maximum
-                        unit = signal.unit if signal.unit else ""
-                        dropdown["menu"].entryconfigure(dropdown["menu"].index(signal_name),
-                                                        label=f"{signal_name} ({min_value} - {max_value} {unit})")
+
+    def update_signal_options(self,index,*args):
+        if self.dbc is None:
+           print("请先加载DBC文件")
+           return
+        singlsingle_slecte_slect_frame = ttk.LabelFrame(self.window,text="信号")
+        singlsingle_slecte_slect_frame.grid(row=0, column=0, padx=20, pady=16, sticky='nw')
+        self.signal_combo = ttk.Combobox(self.window, width=80)
+        self.signal_combo.grid(row=6+index, column=0, padx=10, pady=10)
+        can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
+        print (can_ids)
+        for can_id in can_ids:
+            print(can_id)
+            
+            message = self.dbc.get_message_by_frame_id(int(can_id,16))
+      
+            if message:
+
+                self.signals = message.signals
+
+                self.signal_combo["values"] = [signal.name for signal in self.signals]
+
+                self.signal_combo.bind("<<ComboboxSelected>>", self.on_signal_selected(index))
+
+            else:
+
+                self.signals = []
+
+                self.signal_combo.set('')
+
+                self.signal_combo["values"] = []
+
+    def on_signal_selected(self, index):
+        
+        selected_signal_name = self.signal_combo.get()
+
+        selected_signal = next((signal for signal in self.signals if signal.name == selected_signal_name), None)
+
+
+        if selected_signal:
+
+            self.unit_label["text"] = f"单位：{selected_signal.unit}"
+
+            self.range_label["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
+
         else:
-            tkinter.messagebox.showerror("错误", "请先加载 DBC 文件。")
+
+            self.unit_label["text"] = ""
+
+            self.range_label["text"] = ""
+        # 获取有效的CAN ID
+
+        #can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
+        #dbc_processor=DBCProcessor(dbc_file=self.dbc_file_var.get())
+        
+        # if can_ids:
+
+        #     # 清空原有选项
+
+        #     for signal_var, signal_option_menu in zip(self.signal_vars, self.signal_option_menus):
+
+        #         signal_var.set("")
+
+        #         signal_option_menu['menu'].delete(0, 'end')
+
+
+        #     # 更新信号选项
+
+        #     for can_id in can_ids:
+
+        #         # 根据CAN ID获取对应的信号列表
+                
+        #         signals = dbc_processor.get_signals_by_can_id(can_id)
+        #         print(signals,can_id)
+        #         # 添加信号选项
+
+        #         for signal in signals:
+
+        #             self.signal_option_menus[can_ids.index(can_id)]['menu'].add_command(
+
+        #                 label=signal, command=lambda value=signal: self.signal_vars[can_ids.index(can_id)].set(value))
 
 
     def create_action_buttons(self):
         action_frame = ttk.Frame(self.window)
         action_frame.grid(row=2, column=1, padx=20, pady=20, sticky='nw')
- 
+
         ttk.Button(action_frame, text="启动", command=self.start_power_cycle_thread).grid(row=0, column=0, padx=10, pady=10)
         ttk.Button(action_frame, text="停止", command=self.stop_and_save_data_thread).grid(row=0, column=1, padx=10, pady=10)
-        
+    
    
     
     def start_power_cycle(self):
         global stop_requested
+       
+        selected_signals =[signal_var.get() for signal_var in self.signal_vars]
+       
+       
         # 获取用户输入的值
         stop_requested = False
-       
+        dbc_file = self.dbc_file_var.get()
         channel = self.channel_var.get()
         bitrate = self.bitrate_var.get()
        
@@ -236,7 +295,7 @@ class GUI:
 
         filtered_addresses = [int(can_id.get(), 16) for can_id in self.can_id_vars if can_id.get()]
         can_reader = CANReader(channel=channel, bitrate=bitrate, filtered_addresses=filtered_addresses)
-        dbc_processor = DBCProcessor(dbc=self.dbc)
+        dbc_processor = DBCProcessor(dbc_file=self.dbc_file_var.get())
 
         # 在此添加时间戳
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -257,11 +316,16 @@ class GUI:
         with open(raw_data_file, "w") as raw_data_file, open(decoded_data_file, "w") as decoded_data_file:
 
             stop_conditions = []
-            for can_id_var, operator_var, value_var in zip(self.can_id_vars, self.stop_condition_operator_vars,
-                                            self.stop_condition_number_vars):
-                if can_id_var.get():
+            for can_id_var, operator_var, value_var,signal_var in zip(self.can_id_vars, self.stop_condition_operator_vars,
+                                            self.stop_condition_number_vars,self.signal_vars):
+                if can_id_var.get() and signal_var.get():
                     can_id = int(can_id_var.get(), 16)
-                    stop_conditions.append((can_id, operator_var.get(), int(value_var.get(), 16)))
+                    operator= operator_var.get()
+                    value= int(value_var.get(),16)
+                    signal_name=signal_var.get()
+                    signal_position =dbc_processor.get_signal_position_by_name(can_id, signal_name)
+                    if signal_position is not None:
+                        stop_conditions.append((can_id, operator_var.get(), int(value_var.get(), 16)))
 
             for _ in range(repeat_cycles):
                 
