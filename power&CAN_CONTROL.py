@@ -78,9 +78,10 @@ class GUI:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("电源控制以及CAN数据monitor")
-        self.window.geometry("1050x900")
+        self.window.geometry("1650x900")
         self.window.configure(bg="lightgray")
         
+        self.filter_condition_frame=None
         self.unit_labels = []
         self.range_labels = []
         self.create_connection_setting_area()
@@ -145,22 +146,20 @@ class GUI:
         ttk.Entry(voltage_cycles_frame, textvariable=self.repeat_cycles_var, width=10).grid(row=2, column=1, padx=5, pady=5)
 
     def create_filter_condition_area(self):
-        filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
-        filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
+        self.filter_condition_frame = ttk.LabelFrame(self.window, text="过滤条件设置")
+        self.filter_condition_frame.grid(row=1, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
         
         self.signal_option_menus=[]
         self.signal_vars  =[]
         self.can_id_vars = []
         self.stop_condition_number_vars = []
         self.stop_condition_operator_vars = []
-        # self.unit_label = tk.Label(filter_condition_frame, text="")
-        # self.range_label = tk.Label(filter_condition_frame, text="")
-        # self.unit_label.grid(row=2, column=2, padx=5, pady=5)
-        # self.range_label.grid(row=2, column=2, padx=5, pady=5)
-        ttk.Label(filter_condition_frame, text="CAN ID").grid(row=0, column=0, padx=5, pady=5)
-        ttk.Label(filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
-        ttk.Label(filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
-        
+        ttk.Label(self.filter_condition_frame, text="CAN ID").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(self.filter_condition_frame, text="停止条件符号").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Label(self.filter_condition_frame, text="停止条件值").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Label(self.filter_condition_frame, text="停止条件关系").grid(row=3, column=0, padx=5, pady=5)
+        ttk.Label(self.filter_condition_frame, text="停止条件范围/单位").grid(row=4, column=0, padx=5, pady=5)
+        ttk.Label(self.filter_condition_frame, text="具体信号选择").grid(row=6, column=0, padx=5, pady=5)
         for i in range(10):
             can_id_var = tk.StringVar()
             self.can_id_vars.append(can_id_var)
@@ -172,40 +171,38 @@ class GUI:
             stop_condition_operator_var = tk.StringVar()
             self.stop_condition_operator_vars.append(stop_condition_operator_var)
 
-            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=15, pady=15)
+            ttk.Entry(self.filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=15, pady=15)
 
-            operator = ttk.OptionMenu(filter_condition_frame, stop_condition_operator_var, '等于', '小于', '大于')
+            operator = ttk.OptionMenu(self.filter_condition_frame, stop_condition_operator_var, '等于', '小于', '大于')
             operator.grid(row=1, column=i + 1, padx=15, pady=15)
 
-            ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=15, pady=15)
+            ttk.Entry(self.filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=15, pady=15)
           
             can_id_var.trace("w",lambda *args,index=i:self.update_signal_options(index))
             
-            unit_label = ttk.Label(filter_condition_frame, text="单位")
+            unit_label = ttk.Label(self.filter_condition_frame, text="单位")
             unit_label.grid(row=4, column=i + 1, padx=5, pady=5)
-            range_label = ttk.Label(filter_condition_frame, text="范围")
+            range_label = ttk.Label(self.filter_condition_frame, text="范围")
             range_label.grid(row=5, column=i + 1, padx=5, pady=5)
             self.unit_labels.append(unit_label)
             self.range_labels.append(range_label)
             
         self.stop_relation_var = tk.StringVar()
-        ttk.Label(filter_condition_frame, text="停止条件关系").grid(row=3, column=0, padx=5, pady=5)
-        relation = ttk.OptionMenu(filter_condition_frame, self.stop_relation_var, 'And', 'Or')
+        
+        relation = ttk.OptionMenu(self.filter_condition_frame, self.stop_relation_var, 'And', 'Or')
         relation.grid(row=3, column=1, padx=5, pady=5)
 
 
     def update_signal_options(self, index, *args):
-        self.signal_select_frame = ttk.LabelFrame(self.window, text="子信号设置")
-        self.signal_select_frame.grid(row=2, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
         if self.dbc is None:
             print("请先加载DBC文件")
             return
-        self.signal_combo = ttk.Combobox(self.signal_select_frame, width=15)  # 缩小下拉列表宽度
-        self.signal_combo.grid(row=6 , column=index, padx=10, pady=10)
+        self.signal_combo = ttk.Combobox(self.filter_condition_frame, width=15)  # 缩小下拉列表宽度
+        self.signal_combo.grid(row=6 , column=index+1, padx=10, pady=10)
 
         # 创建横向滚动条
-        scrollbar = tk.Scrollbar(self.signal_select_frame, orient=tk.HORIZONTAL,width=15)
-        scrollbar.grid(row=7, column=index, padx=5, pady=(0,5), sticky="ew")
+        scrollbar = tk.Scrollbar(self.filter_condition_frame, orient=tk.HORIZONTAL,width=15)
+        scrollbar.grid(row=7, column=index+1, padx=5, pady=(0,5), sticky="ew")
        
         self.signal_combo.config(xscrollcommand=scrollbar.set)
         scrollbar.config(command=self.signal_combo.xview)
@@ -218,7 +215,8 @@ class GUI:
             message = self.dbc.get_message_by_frame_id(int(can_id, 16))
             if message:
                 self.signals = message.signals
-                self.signal_combo["values"] = [signal.name for signal in self.signals]
+                signal_names = [signal.name for signal in self.signals]
+                self.signal_combo["values"]= sorted(signal_names)
                 self.signal_combo.bind("<<ComboboxSelected>>", lambda event: self.on_signal_selected(index))
             else:
                 self.signals = []
