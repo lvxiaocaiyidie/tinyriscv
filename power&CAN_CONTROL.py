@@ -78,7 +78,7 @@ class GUI:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("电源控制以及CAN数据monitor")
-        self.window.geometry("950x500")
+        self.window.geometry("1050x900")
         self.window.configure(bg="lightgray")
         
         self.unit_labels = []
@@ -166,25 +166,24 @@ class GUI:
             self.can_id_vars.append(can_id_var)
             signal_var = tk.StringVar()
             self.signal_vars.append(signal_var)
-            signal_option_menu =ttk.OptionMenu(filter_condition_frame, signal_var,"")
-            signal_option_menu.grid(row=8, column=i+1, padx=5, pady=5)
+           
             stop_condition_number_var = tk.StringVar()
             self.stop_condition_number_vars.append(stop_condition_number_var)
             stop_condition_operator_var = tk.StringVar()
             self.stop_condition_operator_vars.append(stop_condition_operator_var)
 
-            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=5, pady=5)
+            ttk.Entry(filter_condition_frame, textvariable=can_id_var, width=8).grid(row=0, column=i + 1, padx=15, pady=15)
 
             operator = ttk.OptionMenu(filter_condition_frame, stop_condition_operator_var, '等于', '小于', '大于')
-            operator.grid(row=1, column=i + 1, padx=5, pady=5)
-            self.signal_option_menus.append(signal_option_menu)
-            ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=5, pady=5)
+            operator.grid(row=1, column=i + 1, padx=15, pady=15)
+
+            ttk.Entry(filter_condition_frame, textvariable=stop_condition_number_var, width=8).grid(row=2, column=i + 1, padx=15, pady=15)
           
             can_id_var.trace("w",lambda *args,index=i:self.update_signal_options(index))
             
-            unit_label = ttk.Label(filter_condition_frame, text="a单位")
+            unit_label = ttk.Label(filter_condition_frame, text="单位")
             unit_label.grid(row=4, column=i + 1, padx=5, pady=5)
-            range_label = ttk.Label(filter_condition_frame, text="a范围")
+            range_label = ttk.Label(filter_condition_frame, text="范围")
             range_label.grid(row=5, column=i + 1, padx=5, pady=5)
             self.unit_labels.append(unit_label)
             self.range_labels.append(range_label)
@@ -195,35 +194,35 @@ class GUI:
         relation.grid(row=3, column=1, padx=5, pady=5)
 
 
-    def update_signal_options(self,index,*args):
+    def update_signal_options(self, index, *args):
+        self.signal_select_frame = ttk.LabelFrame(self.window, text="子信号设置")
+        self.signal_select_frame.grid(row=2, column=0, padx=20, pady=20, columnspan=3, sticky='nw')
         if self.dbc is None:
-           print("请先加载DBC文件")
-           return
-        # singlsingle_slecte_slect_frame = ttk.LabelFrame(self.window,text="信号")
-        # singlsingle_slecte_slect_frame.grid(row=0, column=0, padx=20, pady=16, sticky='nw')
-        self.signal_combo = ttk.Combobox(self.window, width=80)
-        self.signal_combo.grid(row=6+index, column=0, padx=10, pady=10)
+            print("请先加载DBC文件")
+            return
+        self.signal_combo = ttk.Combobox(self.signal_select_frame, width=15)  # 缩小下拉列表宽度
+        self.signal_combo.grid(row=6 , column=index, padx=10, pady=10)
+
+        # 创建横向滚动条
+        scrollbar = tk.Scrollbar(self.signal_select_frame, orient=tk.HORIZONTAL,width=15)
+        scrollbar.grid(row=7, column=index, padx=5, pady=(0,5), sticky="ew")
+       
+        self.signal_combo.config(xscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.signal_combo.xview)
+
+        self.signal_combo.config(xscrollcommand = scrollbar.set) # combobox绑定滚动条设置
+        scrollbar.config(command =self.signal_combo.xview) # 滚动条绑定combobox滚动设置
+
         can_ids = [can_id_var.get() for can_id_var in self.can_id_vars if can_id_var.get()]
-        print (can_ids)
         for can_id in can_ids:
-            
-            
-            message = self.dbc.get_message_by_frame_id(int(can_id,16))
-      
+            message = self.dbc.get_message_by_frame_id(int(can_id, 16))
             if message:
-
                 self.signals = message.signals
-
                 self.signal_combo["values"] = [signal.name for signal in self.signals]
-
-                self.signal_combo.bind("<<ComboboxSelected>>", lambda event:self.on_signal_selected(index))
-
+                self.signal_combo.bind("<<ComboboxSelected>>", lambda event: self.on_signal_selected(index))
             else:
-
                 self.signals = []
-
-                self.signal_combo.set('')
-
+                self.signal_combo.set("")
                 self.signal_combo["values"] = []
 
     def on_signal_selected(self, index):
@@ -295,7 +294,7 @@ class GUI:
                 if can_id_var.get() and signal_var.get():
                     can_id = int(can_id_var.get(), 16)
                     operator= operator_var.get()
-                    value= int(value_var.get(),16)
+                    value= float(value_var.get(),16)  #用户的输入转化为了he'x十六进制float
                     signal_name=signal_var.get()
                     signal_position =dbc_processor.get_signal_position_by_name(can_id, signal_name)
                     stop_conditions.append((can_id, signal_name, operator, value))
@@ -319,7 +318,7 @@ class GUI:
                     satisfied_conditions = 0
                     for can_id, signal_name, operator, value in stop_conditions:
                         if can_id in parsed_data:
-                            signal_value = parsed_data[can_id].get(signal_name)
+                            signal_value = float(parsed_data[can_id].get(signal_name),16)
                             if signal_value is not None:
                                 match = False
                                 if operator == "等于":
