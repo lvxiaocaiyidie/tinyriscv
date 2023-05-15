@@ -1,10 +1,12 @@
 import tkinter as tk
 import tkinter.messagebox
 import pyvisa
+import sys
+import atexit
 import can
 import cantools
 import time
-from tkinter import ttk,StringVar
+from tkinter import ttk,StringVar,filedialog
 import os
 os.add_dll_directory('C:\\Program Files (x86)\\Keysight\\IO Libraries Suite\\bin')
 import datetime
@@ -45,6 +47,16 @@ class CANReader:
                 messages.append(message)
 
         return messages
+class TextRedirector:
+   def __init__(self, widget):
+       self.widget = widget
+
+   def write(self, text):
+       self.widget.insert(tk.END, text)
+       self.widget.see(tk.END)
+
+   def flush(self):
+       pass
 
 # DBCProcessor 类
 class DBCProcessor:
@@ -81,6 +93,8 @@ class GUI:
         self.window.geometry("1650x900")
         self.window.configure(bg="lightgray")
         
+        
+        self.dbc_file_path=None
         self.filter_condition_frame=None
         self.unit_labels = []
         self.range_labels = []
@@ -89,6 +103,7 @@ class GUI:
         self.create_voltage_cycles_area()
         self.create_filter_condition_area()
         self.create_action_buttons()
+        self.create_output_area()
         self.dbc=None
         global stop_requested
         stop_requested= False
@@ -99,13 +114,8 @@ class GUI:
        connection_setting_frame = ttk.LabelFrame(self.window, text="连接设置")
        connection_setting_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nw')
 
-       ttk.Label(connection_setting_frame, text="DBC文件路径:").grid(row=0, column=0, padx=5, pady=5)
-       self.dbc_file_var = tk.StringVar(value='C:\\Users\\leylv\\Downloads\\Lychee_VEH.dbc')
-
-       dbc_file_entry = ttk.Entry(connection_setting_frame, textvariable=self.dbc_file_var, width=30)
-       dbc_file_entry.grid(row=0, column=1, padx=5, pady=5)
-
-       ttk.Button(connection_setting_frame, text="加载DBC", command=self.load_dbc).grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+       ttk.Label(connection_setting_frame, text="加载DBC文件:").grid(row=0, column=0, padx=5, pady=5)
+       ttk.Button(connection_setting_frame, text="加载DBC", command=self.start_load_dbc_thread).grid(row=0, column=0, columnspan=2, padx=5, pady=5)
 
        ttk.Label(connection_setting_frame, text="Channel:").grid(row=2, column=0, padx=5, pady=5)
        self.channel_var = tk.StringVar(value="PCAN_USBBUS1")
@@ -114,13 +124,17 @@ class GUI:
        ttk.Label(connection_setting_frame, text="Bitrate:").grid(row=3, column=0, padx=5, pady=5)
        self.bitrate_var = tk.IntVar(value=500000)
        ttk.Entry(connection_setting_frame, textvariable=self.bitrate_var, width=30).grid(row=3, column=1, padx=5, pady=5)
-
     def load_dbc(self):
-       print("DBC文件加载中") 
-       dbc_file_path = self.dbc_file_var.get()
-       self.dbc = cantools.database.load_file(dbc_file_path)
-       print("DBC文件加载成功")
-
+        print("DBC文件加载中") 
+        self.dbc_file_path = filedialog.askopenfilename(filetypes=[("DBC 文件", "*.dbc")])
+        if self.dbc_file_path:
+            self.dbc = cantools.database.load_file(self.dbc_file_path)
+            self.signals = []
+        print("DBC文件加载成功")   
+    def start_load_dbc_thread(self):
+        t=threading.Thread(target=self.load_dbc)
+        t.start()  
+        
     def create_voltage_setting_area(self):
         voltage_setting_frame = ttk.LabelFrame(self.window, text="电压设置")
         voltage_setting_frame.grid(row=0, column=1, padx=20, pady=20, sticky='nw')
@@ -229,7 +243,7 @@ class GUI:
        
         if selected_signal:
             self.unit_labels[index]["text"] = f"单位：{selected_signal.unit}"
-            
+            print("请依据显示的单位以及范围输入数据")
             self.range_labels[index]["text"] = f"范围：{selected_signal.minimum}-{selected_signal.maximum}"
         else:
             self.unit_labels[index]["text"] = ""
@@ -254,7 +268,6 @@ class GUI:
        
         # 获取用户输入的值
         stop_requested = False
-        dbc_file = self.dbc_file_var.get()
         channel = self.channel_var.get()
         bitrate = self.bitrate_var.get()
        
@@ -266,7 +279,7 @@ class GUI:
 
         filtered_addresses = [int(can_id.get(), 16) for can_id in self.can_id_vars if can_id.get()]
         can_reader = CANReader(channel=channel, bitrate=bitrate, filtered_addresses=filtered_addresses)
-        dbc_processor = DBCProcessor(dbc_file=self.dbc_file_var.get())
+        dbc_processor = DBCProcessor(dbc_file=self.dbc_file_path)
 
         # 在此添加时间戳
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -297,7 +310,7 @@ class GUI:
                     signal_position =dbc_processor.get_signal_position_by_name(can_id, signal_name)
                     stop_conditions.append((can_id, signal_name, operator, value))
             for _ in range(repeat_cycles):
-                
+                print("重复周期：",repeat_cycles)
                 psc.set_output_voltage(0)
                 self.window.after(1000 * duration_1, psc.set_output_voltage(self.voltage_var.get()))
 
@@ -309,6 +322,8 @@ class GUI:
                     # 新增：记录原始信号和解码后的信号到文件
                     raw_data_file.write(f"{can_data}\n")
                     decoded_data_file.write(f"{parsed_data}\n")
+                    print("创建文件",raw_data_file,"并开始记录")
+                    print("创建文件",decoded_data_file,"并开始记录")
                     print(stop_requested)
                     if stop_requested==True:
                         tkinter.messagebox.showinfo("终止" ,"手动停止")
@@ -361,7 +376,23 @@ class GUI:
         global stop_requested
         stop_requested=True
         self.stop_power_cycle()
-        
+    def create_output_area(self):
+       # 在现有布局之后添加输出窗口
+       self.output_text = tk.Text(self.window, width=80, height=10, wrap=tk.WORD)
+       self.output_text.grid(row=3, column=0, padx=20, pady=10, columnspan=3, sticky='nw')
+
+       # 添加一个滚动条
+       scrollbar = tk.Scrollbar(self.window, command=self.output_text.yview)
+       scrollbar.grid(row=3, column=1, padx=200, pady=10, sticky='nsw')
+       self.output_text['yscrollcommand'] = scrollbar.set
+
+       # 重定向标准输出到Text小部件
+       sys.stdout = TextRedirector(self.output_text)
+       atexit.register(self.restore_stdout)  # 在程序结束时注册回调函数
+
+   # 在程序结束时恢复原始标准输出
+    def restore_stdout(self):
+       sys.stdout = self.original_stdout    
         
 if __name__ == '__main__':
     app = GUI()
